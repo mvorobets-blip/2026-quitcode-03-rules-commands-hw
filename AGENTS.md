@@ -38,8 +38,8 @@
 ## Перед комітом
 
 ```bash
-cd app && npm test && npm run typecheck && npm run check:rules
-git status --short -- app/src/core app/scripts materials   # має бути порожньо
+(cd app && npm test && npm run typecheck && npm run check:rules)
+git status --short -- app/src/core app/scripts materials .coderabbit.yaml .github   # має бути порожньо
 ```
 
 Тести зелені, typecheck без помилок, `check:rules` не більше за базову лінію.

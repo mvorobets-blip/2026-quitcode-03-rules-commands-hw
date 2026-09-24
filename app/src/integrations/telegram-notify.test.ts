@@ -115,7 +115,7 @@ describe("telegram-notify", () => {
     await expect(telegramNotify.send(lead)).resolves.toEqual({ ok: false, error: "telegram error: Forbidden" });
   });
 
-  it("повертає помилку на неочікувану форму відповіді", async () => {
+  it("повертає помилку на невалідний JSON", async () => {
     stubTelegramEnv();
     silenceLogs();
     vi.stubGlobal("fetch", vi.fn(async () => new Response("not json", { status: 200 })));
@@ -123,6 +123,17 @@ describe("telegram-notify", () => {
     await expect(telegramNotify.send(lead)).resolves.toEqual({
       ok: false,
       error: "telegram-notify: invalid JSON",
+    });
+  });
+
+  it("повертає помилку на неочікувану форму відповіді", async () => {
+    stubTelegramEnv();
+    silenceLogs();
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ result: {} }), { status: 200 })));
+
+    await expect(telegramNotify.send(lead)).resolves.toEqual({
+      ok: false,
+      error: "telegram-notify: unexpected shape",
     });
   });
 });

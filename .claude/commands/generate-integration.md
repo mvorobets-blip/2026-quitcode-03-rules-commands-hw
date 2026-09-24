@@ -19,7 +19,7 @@ argument-hint: <назва сервісу, напр. telegram-notify>
    `app/src/core/types.ts` (`Integration`, `Lead`) і `app/src/integrations/index.ts`.
 3. Створи `app/src/integrations/<name>.ts` за `.claude/rules/architecture.md`:
    - експорт `Integration`, `name` = ім'я файлу, `requiredEnv` — усі змінні;
-   - `send()` повертає `Result<void>`: `readEnv` → `postJson`; відповідь, якщо її
+   - `send()` повертає `Promise<Result<void>>`: `readEnv` → `postJson`; відповідь, якщо її
      треба розібрати, — через `parseJson` + guard; журнал — через `log`.
 4. Створи `app/src/integrations/<name>.test.ts` — мінімум три кейси з
    `conventions.md`: успіх (перевір URL і тіло), відсутня змінна середовища,
