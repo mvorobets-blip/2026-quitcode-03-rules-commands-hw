@@ -125,9 +125,24 @@
 
 ### `/generate-integration`
 
-- Виклик: `/generate-integration <сервіс>` (будь-який сервіс вашої агенції)
-- Які файли створено: <...>
-- `npm test`, `npm run check:rules`: <...>
+- Виклик: `/generate-integration telegram-notify`
+- Чи підставився `$ARGUMENTS`: так — агент одразу взяв назву `telegram-notify`.
+- Тип: сповіщення → у тексті лише `name`, `source`, `budgetUsd`.
+- Які файли створено (діф — рівно 3 файли):
+  - `app/src/integrations/telegram-notify.ts` — Bot API `sendMessage`, лише `readEnv`,
+    `postJson`, `parseJson` + guard `isTelegramResponse`, `log`; токен у URL, тому
+    текст помилки проходить через `redact()`; `name: "telegram-notify"`,
+    `requiredEnv: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]`.
+  - `app/src/integrations/telegram-notify.test.ts` — 8 тестів: успіх (точні URL і тіло,
+    немає email / phone), відсутня кожна з двох змінних, HTTP 400 (без повтору, без
+    токена в помилці), `ok: false`, невалідний JSON, `name`/`requiredEnv`, формат.
+  - `app/src/integrations/index.ts` — імпорт + `telegramNotify` у масиві (2 рядки через
+    named-експорт; агент сам це зазначив).
+- `grep -nE "fetch|process\.env|JSON\.parse|console\.|any"` по новому модулю → порожньо.
+- `npm test`: 18 → 26 passed (7 файлів); `npm run typecheck` — без помилок.
+- `npm run check:rules`: `TOTAL: 1` (не зріс; лише спадкове `src/sync/state.ts`),
+  для нових файлів 0, `core-untouched` 0. Core не змінено, залежностей не додано,
+  не комітив — показав підсумок.
 
 ## Task E (бонус) — хук
 
