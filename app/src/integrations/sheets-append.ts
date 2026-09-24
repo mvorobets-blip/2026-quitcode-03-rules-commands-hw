@@ -1,7 +1,7 @@
 // Додає рядок з лідом у Google-таблицю через вебхук (перенесено з n8n «Leads → Google Sheets»).
 import { readEnv } from "../core/config.js";
 import { postJson } from "../core/http.js";
-import { log } from "../core/log.js";
+import { log, redact } from "../core/log.js";
 import { isRecord, isString, parseJson } from "../core/parse.js";
 import type { Integration, Lead, Result } from "../core/types.js";
 
@@ -21,8 +21,10 @@ const sheetsAppend: Integration = {
     const row = [lead.createdAt, lead.name, lead.email, lead.phone ?? "", lead.source];
     const response = await postJson(url, { values: [row] });
     if (!response.ok) {
-      log.error(`sheets-append: lead ${lead.id} not added: ${response.error}`);
-      return response;
+      // URL містить токен таблиці — не віддаємо його далі в тексті помилки.
+      const error = redact(response.error);
+      log.error(`sheets-append: lead ${lead.id} not added: ${error}`);
+      return { ok: false, error };
     }
 
     const data = parseJson(response.value, isSheetsResponse, "sheets-append");
