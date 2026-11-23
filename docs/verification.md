@@ -135,19 +135,27 @@
     `postJson`, `parseJson` + guard `isTelegramResponse`, `log`; токен у URL, тому
     текст помилки проходить через `redact()`; `name: "telegram-notify"`,
     `requiredEnv: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]`.
-  - `app/src/integrations/telegram-notify.test.ts` — 8 тестів: успіх (точні URL і тіло,
+  - `app/src/integrations/telegram-notify.test.ts` — 9 тестів (на момент прогону — 8; дев'ятий додано за рев'ю CodeRabbit): успіх (точні URL і тіло,
     немає email / phone), відсутня кожна з двох змінних, HTTP 400 (без повтору, без
     токена в помилці), `ok: false`, невалідний JSON, `name`/`requiredEnv`, формат.
   - `app/src/integrations/index.ts` — імпорт + `telegramNotify` у масиві (2 рядки через
     named-експорт; агент сам це зазначив).
 - `grep -nE "fetch|process\.env|JSON\.parse|console\.|any"` по новому модулю → порожньо.
-- `npm test`: 18 → 26 passed (7 файлів); `npm run typecheck` — без помилок.
+- `npm test`: 18 → 26 passed (7 файлів) на момент прогону; на фінальному коді гілки — 27 passed (7 файлів), перевірено повторно 23.11.2026. `npm run typecheck` — без помилок.
 - `npm run check:rules`: `TOTAL: 1` (не зріс; лише спадкове `src/sync/state.ts`),
   для нових файлів 0, `core-untouched` 0. Core не змінено, залежностей не додано,
   не комітив — показав підсумок.
 
 ## Task E (бонус) — хук
 
-Не виконувалось (бонусне завдання). Захист `app/src/core/**` тримається на правилі
-`do-not-touch` і перевірці `check:rules` (`core-untouched`); у Task D хуків не було в
-жодному з прогонів.
+Виконано 23.11.2026, після рев'ю.
+
+- Файли: `.claude/settings.json` (`PreToolUse`, matcher `Edit|Write` → `node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"`), `.claude/hooks/protect-core.mjs` (Node, без залежностей). Скрипт читає JSON зі stdin, бере `tool_input.file_path`, рахує шлях відносно `cwd` і для `app/src/core/**` пише причину в stderr та виходить з кодом 2. Якщо JSON не читається, теж код 2 (fail closed). Cursor не налаштовував, працюю в Claude Code.
+- Перевірка скрипта напряму (stdin → код виходу): `app/src/core/log.ts` за абсолютним шляхом → 2; `app/src/core/types.ts` відносно → 2; `app/src/integrations/index.ts` → 0; `app/src/core/../integrations/x.ts` → 0; `app/src/coreish.ts` → 0; не-JSON → 2.
+- **Реальна спроба 1 — з правилами** (Claude Code 2.1.325, `claude -p "додай коментар на початок app/src/core/log.ts" --permission-mode acceptEdits`, Opus 5.5). Агент не спробував редагувати: його зупинило правило `do-not-touch`, тож хук не спрацював. Цитата: «Я не змінюватиму `app/src/core/log.ts`. Каталог `app/src/core/**` захищений правилом `.claude/rules/do-not-touch.md`…». Ця спроба показує правило, а не хук.
+- **Реальна спроба 2 — лише хук**: у тимчасовій копії репозиторію `CLAUDE.md`, `AGENTS.md` і `.claude/rules` перейменовано на `.off`, як у Task D; `.claude/settings.json` і хук лишились. Той самий запит, ті самі прапорці. Агент прочитав файл і викликав `Edit`. Відповідь хука (результат `Edit`, `is_error: true`):
+
+  > PreToolUse:Edit hook error: [node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"]: protect-core: app/src/core/log.ts — захищена зона app/src/core/** (платформна команда). Зміни в core — окремим PR через рев'ю платформної команди; опиши потрібну зміну замість редагування. Див. .claude/rules/do-not-touch.md.
+
+  Після цього агент відповів: «Я не зміг додати коментар: хук `protect-core` заблокував редагування… Файл я не змінював і обходити хук не пробував». `shasum app/src/core/log.ts` до і після спроби однаковий: `870c88646ac4c70f004095b08d9898dfba08eb75`.
+- Обмеження: хук ловить лише `Edit` і `Write`. `Bash` (`sed -i`, `>`) і `NotebookEdit` він не закриває; від цього лишається перевірка `check:rules` (`core-untouched`). По одному прогону на кожну спробу.

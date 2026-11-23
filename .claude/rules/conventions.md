@@ -45,7 +45,7 @@ paths:
 
 - `cd app && npm run check:rules` — для змінених/нових файлів 0 у рядках
   `http-via-core`, `env-via-config`, `json-via-parse`, `log-via-logger`, `no-any`,
-  `no-new-deps`; `TOTAL` не більший за базову лінію (8).
+  `no-new-deps`; `TOTAL` не більший за базову лінію (1; до рефакторингу `/refactor` було 8).
 - `grep -rnE "email|phone" app/src/integrations/slack-notify.ts` (і інші модулі сповіщень) → порожньо.
 - `grep -rn "throw " app/src/integrations --include="*.ts" --exclude="*.test.ts"` → порожньо.
 - `cd app && npm test && npm run typecheck` — зелено.
