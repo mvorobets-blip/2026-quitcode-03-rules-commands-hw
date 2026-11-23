@@ -151,7 +151,23 @@
 Виконано 23.11.2026, після рев'ю.
 
 - Файли: `.claude/settings.json` (`PreToolUse`, matcher `Edit|Write` → `node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"`), `.claude/hooks/protect-core.mjs` (Node, без залежностей). Скрипт читає JSON зі stdin, бере `tool_input.file_path`, рахує шлях відносно `cwd` і для `app/src/core/**` пише причину в stderr та виходить з кодом 2. Якщо JSON не читається, теж код 2 (fail closed). Cursor не налаштовував, працюю в Claude Code.
-- Перевірка скрипта напряму (stdin → код виходу): `app/src/core/log.ts` за абсолютним шляхом → 2; `app/src/core/types.ts` відносно → 2; `app/src/integrations/index.ts` → 0; `app/src/core/../integrations/x.ts` → 0; `app/src/coreish.ts` → 0; не-JSON → 2.
+- Перевірка скрипта напряму (stdin → код виходу), після виправлення за рев'ю CodeRabbit 23.11: шлях тепер рахується відносно кореня репозиторію (дві теки над `.claude/hooks/`), а не відносно `cwd` сесії, і з обох боків береться справжній шлях (`realpath`), тож симлінк на кшталт macOS `/tmp` → `/private/tmp` не ховає core. До виправлення сесія з `cwd = app/` редагувала `app/src/core/log.ts` без блокування (код 0).
+
+  | `cwd` сесії | `file_path` | Код |
+  |---|---|---|
+  | корінь | `<repo>/app/src/core/log.ts` | 2 |
+  | `app/` | `<repo>/app/src/core/log.ts` | 2 |
+  | `app/` | `src/core/log.ts` (відносний) | 2 |
+  | `app/src/` | `core/new-file.ts` (новий файл, `Write`) | 2 |
+  | корінь | той самий `log.ts` через `/tmp/…` замість `/private/tmp/…` | 2 |
+  | `app/` через `/tmp/…` | `src/core/types.ts` | 2 |
+  | корінь | `app/src/integrations/../core/log.ts` | 2 |
+  | корінь | `app/src/integrations/index.ts` | 0 |
+  | `app/` | `src/integrations/index.ts` | 0 |
+  | `app/` | `src/integrations/new.ts` (новий файл) | 0 |
+  | корінь | `app/src/coreish.ts` | 0 |
+  | корінь | `app/src/core/../integrations/x.ts` | 0 |
+  | — | не-JSON на stdin | 2 |
 - **Реальна спроба 1 — з правилами** (Claude Code 2.1.325, `claude -p "додай коментар на початок app/src/core/log.ts" --permission-mode acceptEdits`, Opus 5.5). Агент не спробував редагувати: його зупинило правило `do-not-touch`, тож хук не спрацював. Цитата: «Я не змінюватиму `app/src/core/log.ts`. Каталог `app/src/core/**` захищений правилом `.claude/rules/do-not-touch.md`…». Ця спроба показує правило, а не хук.
 - **Реальна спроба 2 — лише хук**: у тимчасовій копії репозиторію `CLAUDE.md`, `AGENTS.md` і `.claude/rules` перейменовано на `.off`, як у Task D; `.claude/settings.json` і хук лишились. Той самий запит, ті самі прапорці. Агент прочитав файл і викликав `Edit`. Відповідь хука (результат `Edit`, `is_error: true`):
 
