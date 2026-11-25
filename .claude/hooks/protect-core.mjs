@@ -2,7 +2,7 @@
 // Reads the tool call JSON from stdin. If the target path is inside app/src/core/,
 // writes the reason to stderr and exits with code 2, which blocks the action.
 // Fails closed on unreadable input: a hook that cannot tell what is being edited blocks it.
-import { realpathSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { basename, dirname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -41,7 +41,21 @@ if (typeof target !== "string" || target === "") process.exit(0);
 // Compared in lower case: on case-insensitive filesystems (macOS, Windows) app/src/CORE/ is the same directory
 // as app/src/core/, and realpath keeps the case as typed. On Linux this blocks app/src/CORE/ too — fail closed.
 const base = input?.cwd ?? process.cwd();
-const rel = relative(REPO_ROOT.toLowerCase(), real(resolve(base, target)).toLowerCase()).split(sep).join("/");
+const realTarget = real(resolve(base, target));
+const relTo = (root) => relative(root.toLowerCase(), realTarget.toLowerCase()).split(sep).join("/");
+
+// The checkout that holds the target: the nearest parent with `.git` (a directory in the main checkout, a file in a
+// git worktree, e.g. .claude/worktrees/<task>/). Its core is protected as well — the rule forbids core edits in
+// worktrees and copies too. Found from the target itself, never from the session cwd.
+function checkoutRoot(p) {
+  for (let dir = dirname(p); ; dir = dirname(dir)) {
+    if (existsSync(resolve(dir, ".git"))) return dir;
+    if (dirname(dir) === dir) return null;
+  }
+}
+const targetRoot = checkoutRoot(realTarget);
+const candidates = [relTo(REPO_ROOT), ...(targetRoot ? [relTo(targetRoot)] : [])];
+const rel = candidates.find((r) => r.startsWith(PROTECTED)) ?? candidates[0];
 
 if (rel.startsWith(PROTECTED)) {
   process.stderr.write(

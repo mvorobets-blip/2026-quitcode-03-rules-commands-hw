@@ -36,6 +36,16 @@ describe("sheets-append", () => {
     });
   });
 
+  it("не повторює запит після 503: рядок міг уже додатися, повтор дав би дубль", async () => {
+    const fetchMock = vi.fn(async () => new Response("busy", { status: 503 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await sheetsAppend.send(lead);
+
+    expect(result.ok).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("повертає помилку, якщо таблиця відповіла не ok", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response('{"status":"quota_exceeded"}', { status: 200 })));
 

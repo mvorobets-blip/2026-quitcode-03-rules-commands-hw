@@ -42,6 +42,7 @@
 ```bash
 (cd app && npm test && npm run typecheck && npm run check:rules)
 git status --short -- app/src/core app/scripts materials .coderabbit.yaml .github   # має бути порожньо
+git diff --name-only origin/main...HEAD -- app/src/core app/scripts materials .coderabbit.yaml .github   # і це — уже закомічене в гілці
 ```
 
 Тести зелені, typecheck без помилок, `check:rules` не більше за базову лінію.

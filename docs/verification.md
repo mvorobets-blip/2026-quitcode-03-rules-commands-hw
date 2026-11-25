@@ -150,7 +150,7 @@
 
 Виконано 23.11.2026, після рев'ю.
 
-- Файли: `.claude/settings.json` (`PreToolUse`, matcher `Edit|Write` → `node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"`), `.claude/hooks/protect-core.mjs` (Node, без залежностей). Скрипт читає JSON зі stdin, бере `tool_input.file_path`. Відносний шлях розв'язується відносно `cwd` сесії; потім ціль і корінь репозиторію переводяться в справжні шляхи (`realpath`) і порівнюються без урахування регістру: перевірка `app/src/core/**` завжди йде відносно кореня репозиторію, не `cwd`. Для `app/src/core/**` скрипт пише причину в stderr і виходить з кодом 2. Якщо JSON не читається, теж код 2 (fail closed). Cursor не налаштовано: робота — у Claude Code.
+- Файли: `.claude/settings.json` (`PreToolUse`, matcher `Edit|Write` → `node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"`), `.claude/hooks/protect-core.mjs` (Node, без залежностей). Скрипт читає JSON зі stdin, бере `tool_input.file_path`. Відносний шлях розв'язується відносно `cwd` сесії; потім ціль і корінь репозиторію переводяться в справжні шляхи (`realpath`) і порівнюються без урахування регістру: перевірка `app/src/core/**` йде відносно кореня репозиторію (за розташуванням скрипта) і відносно checkout, у якому лежить ціль, — найближчої теки з `.git` над нею (у git worktree `.git` — файл), але ніколи не відносно `cwd`. Для `app/src/core/**` скрипт пише причину в stderr і виходить з кодом 2. Якщо JSON не читається, теж код 2 (fail closed). Cursor не налаштовано: робота — у Claude Code.
 - Перевірка скрипта напряму (stdin → код виходу), після виправлень за рев'ю CodeRabbit 23.11 і 25.11 (регістр шляху: macOS і Windows не розрізняють `CORE` і `core`): шлях тепер рахується відносно кореня репозиторію (дві теки над `.claude/hooks/`), а не відносно `cwd` сесії, і з обох боків береться справжній шлях (`realpath`), тож симлінк на кшталт macOS `/tmp` → `/private/tmp` не ховає core. До виправлення сесія з `cwd = app/` редагувала `app/src/core/log.ts` без блокування (код 0).
 
   | `cwd` сесії | `file_path` | Код |
@@ -165,6 +165,11 @@
   | корінь | `app/src/CORE/new.ts` (інший регістр; до виправлення 25.11 — код 0) | 2 |
   | корінь | `App/Src/Core/log.ts` | 2 |
   | корінь | `<REPO у верхньому регістрі>/app/src/core/log.ts` | 2 |
+  | корінь | `<REPO>/.claude/worktrees/task/app/src/core/log.ts` (git worktree усередині репо; до виправлення 25.11 — код 0) | 2 |
+  | `<worktree>/app/` | `src/core/log.ts` (відносний, сесія в worktree) | 2 |
+  | `<worktree>/app/src/` | `core/new.ts` (новий файл у worktree) | 2 |
+  | worktree | `<worktree>/app/src/integrations/index.ts` | 0 |
+  | тека без `.git` поза репо | `<tmp>/app/src/core/x.ts` | 0 (обмеження, див. нижче) |
   | корінь | `app/src/integrations/index.ts` | 0 |
   | `app/` | `src/integrations/index.ts` | 0 |
   | `app/` | `src/integrations/new.ts` (новий файл) | 0 |
@@ -177,4 +182,5 @@
   > PreToolUse:Edit hook error: [node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"]: protect-core: app/src/core/log.ts — захищена зона app/src/core/** (платформна команда). Зміни в core — окремим PR через рев'ю платформної команди; опиши потрібну зміну замість редагування. Див. .claude/rules/do-not-touch.md.
 
   Після цього агент відповів: «Я не зміг додати коментар: хук `protect-core` заблокував редагування… Файл я не змінював і обходити хук не пробував». `shasum app/src/core/log.ts` до і після спроби однаковий: `870c88646ac4c70f004095b08d9898dfba08eb75`.
+- Обмеження: копію репозиторію без `.git` (просто скопійовані файли) хук не розпізнає — для неї діє лише правило `do-not-touch`; git worktree і клон з `.git` захищені.
 - Обмеження: хук ловить лише `Edit` і `Write`. `Bash` (`sed -i`, `>`) і `NotebookEdit` він не закриває; від цього лишається перевірка `check:rules` (`core-untouched`). По одному прогону на кожну спробу.

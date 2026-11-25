@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Lead } from "../core/types.js";
-import { formatTelegramMessage, telegramNotify } from "./telegram-notify.js";
+import { formatTelegramMessage, MAX_NAME_LENGTH, TELEGRAM_MAX_TEXT, telegramNotify } from "./telegram-notify.js";
 
 const lead: Lead = {
   id: "ld_0001",
@@ -64,6 +64,21 @@ describe("telegram-notify", () => {
     expect(rawBody).not.toContain(lead.email);
     expect(rawBody).not.toContain("+380");
     expect(rawBody).not.toMatch(/email|phone/);
+  });
+
+  it("довге ім'я ліда обрізається: текст sendMessage не довший за 4096 символів", async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response('{"ok":true}', { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    stubTelegramEnv();
+    silenceLogs();
+    const longLead = { ...lead, name: "Я".repeat(5000) };
+
+    await expect(telegramNotify.send(longLead)).resolves.toEqual({ ok: true, value: undefined });
+
+    const text = String(JSON.parse(String(fetchMock.mock.calls[0]![1]?.body)).text);
+    expect(Array.from(text).length).toBeLessThanOrEqual(TELEGRAM_MAX_TEXT);
+    expect(text).toContain(`${"Я".repeat(MAX_NAME_LENGTH - 1)}…`);
+    expect(text.endsWith("бюджет не вказано") || text.includes("бюджет $")).toBe(true);
   });
 
   it("повертає помилку, якщо не задано TELEGRAM_BOT_TOKEN", async () => {

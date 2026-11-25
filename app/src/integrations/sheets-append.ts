@@ -19,7 +19,10 @@ const sheetsAppend: Integration = {
 
     const url = `${webhookUrl.value}?token=${token.value}`;
     const row = [lead.createdAt, lead.name, lead.email, lead.phone ?? "", lead.source];
-    const response = await postJson(url, { values: [row] });
+    // Без повторів: додавання рядка не ідемпотентне — вебхук міг додати рядок і все одно відповісти 503,
+    // і повтор з тим самим тілом дав би дубль. Ключа ідемпотентності вебхук не має, тож тимчасова помилка
+    // одразу повертає Result з помилкою (повне рев'ю CodeRabbit 25.11).
+    const response = await postJson(url, { values: [row] }, { retries: 0 });
     if (!response.ok) {
       // URL містить токен таблиці — не віддаємо його далі в тексті помилки.
       const error = redact(response.error);

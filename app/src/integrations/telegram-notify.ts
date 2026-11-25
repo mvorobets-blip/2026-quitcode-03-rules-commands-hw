@@ -17,9 +17,19 @@ const isTelegramResponse = (value: unknown): value is TelegramResponse =>
   typeof value.ok === "boolean" &&
   (value.description === undefined || isString(value.description));
 
+// Telegram sendMessage приймає текст до 4096 символів. Решта повідомлення коротка (джерело — enum, бюджет —
+// число), тож обрізаємо лише ім'я: інакше довге ім'я ліда робило б сповіщення недоставленим.
+export const TELEGRAM_MAX_TEXT = 4096;
+export const MAX_NAME_LENGTH = 200;
+
+function clip(text: string, max: number): string {
+  const chars = Array.from(text); // за символами, а не UTF-16 одиницями: не ріжемо емодзі навпіл
+  return chars.length <= max ? text : `${chars.slice(0, max - 1).join("")}…`;
+}
+
 export function formatTelegramMessage(lead: Lead): string {
   const budget = lead.budgetUsd === undefined ? "бюджет не вказано" : `бюджет $${lead.budgetUsd}`;
-  return `Новий лід: ${lead.name} · ${lead.source} · ${budget}`;
+  return `Новий лід: ${clip(lead.name, MAX_NAME_LENGTH)} · ${lead.source} · ${budget}`;
 }
 
 export const telegramNotify: Integration = {

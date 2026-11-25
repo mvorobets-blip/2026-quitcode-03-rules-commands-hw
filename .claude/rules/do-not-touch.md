@@ -33,5 +33,7 @@
 
 ## Як перевірити
 
-- `git status --short -- app/src/core app/scripts materials .coderabbit.yaml .github` → порожньо.
+- `git status --short -- app/src/core app/scripts materials .coderabbit.yaml .github` → порожньо
+  (незакомічені зміни).
+- `git diff --name-only origin/main...HEAD -- app/src/core app/scripts materials .coderabbit.yaml .github` → порожньо (зміни, уже закомічені в гілці, відносно бази PR; спершу `git fetch origin`).
 - `cd app && npm run check:rules` → рядок `core-untouched` дорівнює `0`.

@@ -39,13 +39,16 @@ paths:
   | `core/parse.ts` | `parseJson(text, guard, label?)` → `Result<T>`, `Guard<T>`, `isRecord`, `isString`, `isNumber` |
   | `core/log.ts` | `log.info`, `log.warn`, `log.error`, `redact(text)` |
 
-- Бракує чогось у ядрі (нове поле `Lead`, новий метод HTTP, новий guard) — не додавай
-  його в `core/` і не дублюй у `integrations/`: зупинись і діяй за правилом `do-not-touch`.
+- Бракує чогось у ядрі (нове поле `Lead`, новий метод HTTP, спільний guard для всіх інтеграцій) — не
+  додавай його в `core/`: зупинись і діяй за правилом `do-not-touch`. Не реалізуй повторно в
+  `integrations/` наявний API ядра (`parseJson`, `postJson`, `readEnv`, `log`, `isRecord`, `isString`,
+  `isNumber`). Локальний `Guard<T>` для форми відповіді **конкретного** зовнішнього сервісу в файлі
+  інтеграції — дозволений (див. `conventions.md`, пункт «Зовнішній JSON»).
 
 ## Як перевірити
 
-- `grep -rnE "from \"\.\./(integrations|sync)/" app/src/core` → порожньо.
+- `grep -rnE "from ['\"]\.\./(integrations|sync)/" app/src/core` → порожньо (обидва види лапок).
 - `grep -rn "\.\./sync/" app/src/integrations` → порожньо.
-- `grep -rnE "from \"\.\./integrations/[a-z-]+\.js\"" app/src/sync` → лише `index.js` або порожньо.
+- `grep -rnE "from ['\"]\.\./integrations/[a-z-]+\.js['\"]" app/src/sync` → лише `index.js` або порожньо.
 - Діф нової інтеграції — рівно три файли: `<name>.ts`, `<name>.test.ts`, `index.ts`.
 - `cd app && npm run typecheck` — без помилок (немає звернень до неіснуючого API ядра).

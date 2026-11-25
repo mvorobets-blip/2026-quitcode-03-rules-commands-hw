@@ -28,7 +28,8 @@ paths:
 - **Журнал — лише `log.info/warn/error`** з `core/log.ts`. Не використовуй `console.*`.
 - **Без `any`.** Для невідомих даних — `unknown` + guard. Не пиши `: any`, `as any`, `<any>`.
 - **Без нових залежностей.** Не запускай `npm install <pkg>` і не додавай
-  `dependencies` у `app/package.json`. Імпорти — лише відносні або `node:*`.
+  `dependencies` у `app/package.json`. Імпорти — лише відносні або `node:*`; у тестах `*.test.ts` —
+  ще `vitest` (уже в `devDependencies`, нової залежності не додає).
   Потрібна бібліотека — зупинись і запропонуй її в описі PR.
 - **Мінімізація даних.** У сповіщення (Slack, Telegram, інші месенджери) передавай
   лише `name`, `source`, `budgetUsd` ліда. `email` і `phone` — тільки в системи обліку
