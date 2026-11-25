@@ -18,8 +18,8 @@
   (лише посилання на AGENTS.md). `architecture` і `conventions` — «немає в контексті».
 - `/context` → Memory files:
   ```
-  /Users/mac1/2026-quitcode-03-rules-commands-hw/CLAUDE.md
-  /Users/mac1/2026-quitcode-03-rules-commands-hw/.claude/rules/do-not-touch.md
+  ~/2026-quitcode-03-rules-commands-hw/CLAUDE.md
+  ~/2026-quitcode-03-rules-commands-hw/.claude/rules/do-not-touch.md
   ```
 - Очікувано: лише `.claude/rules/do-not-touch.md` (без `paths` — завжди);
   `architecture` і `conventions` ще немає.
@@ -51,9 +51,9 @@
 - Результат:
   - Memory files:
     ```
-    /Users/mac1/2026-quitcode-03-rules-commands-hw/CLAUDE.md
-    /Users/mac1/2026-quitcode-03-rules-commands-hw/AGENTS.md
-    /Users/mac1/2026-quitcode-03-rules-commands-hw/.claude/rules/do-not-touch.md
+    ~/2026-quitcode-03-rules-commands-hw/CLAUDE.md
+    ~/2026-quitcode-03-rules-commands-hw/AGENTS.md
+    ~/2026-quitcode-03-rules-commands-hw/.claude/rules/do-not-touch.md
     ```
   - Кроки інструментів до відповіді: немає.
   - Відповідь агента (коротко): джерела — «CLAUDE.md, AGENTS.md,
