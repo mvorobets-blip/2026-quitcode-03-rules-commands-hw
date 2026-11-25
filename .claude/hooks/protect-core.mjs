@@ -38,8 +38,10 @@ const target = input?.tool_input?.file_path ?? input?.tool_input?.path ?? input?
 if (typeof target !== "string" || target === "") process.exit(0);
 
 // A relative target is resolved against the session cwd; the protection check is always against REPO_ROOT.
+// Compared in lower case: on case-insensitive filesystems (macOS, Windows) app/src/CORE/ is the same directory
+// as app/src/core/, and realpath keeps the case as typed. On Linux this blocks app/src/CORE/ too — fail closed.
 const base = input?.cwd ?? process.cwd();
-const rel = relative(REPO_ROOT, real(resolve(base, target))).split(sep).join("/");
+const rel = relative(REPO_ROOT.toLowerCase(), real(resolve(base, target)).toLowerCase()).split(sep).join("/");
 
 if (rel.startsWith(PROTECTED)) {
   process.stderr.write(

@@ -150,8 +150,8 @@
 
 Виконано 23.11.2026, після рев'ю.
 
-- Файли: `.claude/settings.json` (`PreToolUse`, matcher `Edit|Write` → `node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"`), `.claude/hooks/protect-core.mjs` (Node, без залежностей). Скрипт читає JSON зі stdin, бере `tool_input.file_path`, рахує шлях відносно `cwd` і для `app/src/core/**` пише причину в stderr та виходить з кодом 2. Якщо JSON не читається, теж код 2 (fail closed). Cursor не налаштовував, працюю в Claude Code.
-- Перевірка скрипта напряму (stdin → код виходу), після виправлення за рев'ю CodeRabbit 23.11: шлях тепер рахується відносно кореня репозиторію (дві теки над `.claude/hooks/`), а не відносно `cwd` сесії, і з обох боків береться справжній шлях (`realpath`), тож симлінк на кшталт macOS `/tmp` → `/private/tmp` не ховає core. До виправлення сесія з `cwd = app/` редагувала `app/src/core/log.ts` без блокування (код 0).
+- Файли: `.claude/settings.json` (`PreToolUse`, matcher `Edit|Write` → `node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"`), `.claude/hooks/protect-core.mjs` (Node, без залежностей). Скрипт читає JSON зі stdin, бере `tool_input.file_path`. Відносний шлях розв'язується відносно `cwd` сесії; потім ціль і корінь репозиторію переводяться в справжні шляхи (`realpath`) і порівнюються без урахування регістру: перевірка `app/src/core/**` завжди йде відносно кореня репозиторію, не `cwd`. Для `app/src/core/**` скрипт пише причину в stderr і виходить з кодом 2. Якщо JSON не читається, теж код 2 (fail closed). Cursor не налаштовано: робота — у Claude Code.
+- Перевірка скрипта напряму (stdin → код виходу), після виправлень за рев'ю CodeRabbit 23.11 і 25.11 (регістр шляху: macOS і Windows не розрізняють `CORE` і `core`): шлях тепер рахується відносно кореня репозиторію (дві теки над `.claude/hooks/`), а не відносно `cwd` сесії, і з обох боків береться справжній шлях (`realpath`), тож симлінк на кшталт macOS `/tmp` → `/private/tmp` не ховає core. До виправлення сесія з `cwd = app/` редагувала `app/src/core/log.ts` без блокування (код 0).
 
   | `cwd` сесії | `file_path` | Код |
   |---|---|---|
@@ -162,6 +162,9 @@
   | корінь | той самий `log.ts` через `/tmp/…` замість `/private/tmp/…` | 2 |
   | `app/` через `/tmp/…` | `src/core/types.ts` | 2 |
   | корінь | `app/src/integrations/../core/log.ts` | 2 |
+  | корінь | `app/src/CORE/new.ts` (інший регістр; до виправлення 25.11 — код 0) | 2 |
+  | корінь | `App/Src/Core/log.ts` | 2 |
+  | корінь | `<REPO у верхньому регістрі>/app/src/core/log.ts` | 2 |
   | корінь | `app/src/integrations/index.ts` | 0 |
   | `app/` | `src/integrations/index.ts` | 0 |
   | `app/` | `src/integrations/new.ts` (новий файл) | 0 |
