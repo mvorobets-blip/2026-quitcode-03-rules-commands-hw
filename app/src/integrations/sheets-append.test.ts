@@ -36,14 +36,25 @@ describe("sheets-append", () => {
     });
   });
 
-  it("не повторює запит після 503: рядок міг уже додатися, повтор дав би дубль", async () => {
-    const fetchMock = vi.fn(async () => new Response("busy", { status: 503 }));
+  it("після тимчасового 503 повторює запит і додає рядок: лід не губиться (checkpoint runSync іде далі)", async () => {
+    const fetchMock = vi
+      .fn(async (_url: string, _init?: RequestInit) => new Response('{"status":"ok"}', { status: 200 }))
+      .mockResolvedValueOnce(new Response("busy", { status: 503 }));
     vi.stubGlobal("fetch", fetchMock);
+
+    await expect(sheetsAppend.send(lead)).resolves.toEqual({ ok: true, value: undefined });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["SHEETS_WEBHOOK_URL", "SHEETS_TOKEN"])("без %s — помилка конфігурації, мережу не викликано", async (name) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv(name, "");
 
     const result = await sheetsAppend.send(lead);
 
     expect(result.ok).toBe(false);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("повертає помилку, якщо таблиця відповіла не ok", async () => {
