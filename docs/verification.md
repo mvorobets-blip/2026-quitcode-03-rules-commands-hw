@@ -178,10 +178,23 @@
   | корінь | `app/src/core/../integrations/x.ts` | 0 |
   | — | не-JSON на stdin | 2 |
 - **Реальна спроба 1 — з правилами** (Claude Code 2.1.325, `claude -p "додай коментар на початок app/src/core/log.ts" --permission-mode acceptEdits`, Opus 5.5). Агент не спробував редагувати: його зупинило правило `do-not-touch`, тож хук не спрацював. Цитата: «Я не змінюватиму `app/src/core/log.ts`. Каталог `app/src/core/**` захищений правилом `.claude/rules/do-not-touch.md`…». Ця спроба показує правило, а не хук.
-- **Реальна спроба 2 — лише хук**: у тимчасовій копії репозиторію `CLAUDE.md`, `AGENTS.md` і `.claude/rules` перейменовано на `.off`, як у Task D; `.claude/settings.json` і хук лишились. Той самий запит, ті самі прапорці. Агент прочитав файл і викликав `Edit`. Відповідь хука (результат `Edit`, `is_error: true`):
+- **Реальна спроба 2 — лише хук (23.11, скрипт на `03ccafc` — перша версія)**: у тимчасовій копії репозиторію `CLAUDE.md`, `AGENTS.md` і `.claude/rules` перейменовано на `.off`, як у Task D; `.claude/settings.json` і хук лишились. Той самий запит, ті самі прапорці. Агент прочитав файл і викликав `Edit`. Відповідь хука (результат `Edit`, `is_error: true`):
 
   > PreToolUse:Edit hook error: [node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"]: protect-core: app/src/core/log.ts — захищена зона app/src/core/** (платформна команда). Зміни в core — окремим PR через рев'ю платформної команди; опиши потрібну зміну замість редагування. Див. .claude/rules/do-not-touch.md.
 
   Після цього агент відповів: «Я не зміг додати коментар: хук `protect-core` заблокував редагування… Файл я не змінював і обходити хук не пробував». `shasum app/src/core/log.ts` до і після спроби однаковий: `870c88646ac4c70f004095b08d9898dfba08eb75`.
+- **Реальна спроба 3 — лише хук, фінальна версія скрипта (26.11, скрипт на `4a9c10b`, blob `3b0e3b9`)** — за
+  повторною перевіркою викладача: після спроби 2 скрипт змінювався тричі (`5107773` — корінь репо й `realpath`,
+  `35aecf9` — регістр, `fe70cba` — worktree). Тимчасовий клон гілки на `4a9c10b` (з `.git`), у ньому `CLAUDE.md`,
+  `AGENTS.md` і `.claude/rules` перейменовано на `.off`, `.claude/settings.json` і хук без змін. Claude Code 2.1.330,
+  Opus 5.5, той самий запит і прапорці: `claude -p "додай коментар на початок app/src/core/log.ts" --permission-mode
+  acceptEdits`. Агент прочитав файл і викликав `Edit`; результат `Edit` (`is_error: true`):
+
+  > PreToolUse:Edit hook error: [node "$CLAUDE_PROJECT_DIR/.claude/hooks/protect-core.mjs"]: protect-core: app/src/core/log.ts — захищена зона app/src/core/** (платформна команда). Зміни в core — окремим PR через рев'ю платформної команди; опиши потрібну зміну замість редагування. Див. .claude/rules/do-not-touch.md.
+
+  Відповідь агента: «Я не додав коментар: правку заблокував хук `protect-core.mjs`. … Обходити хук я не став, файл
+  не змінився.» — і запропонував описати зміну як запит до платформної команди. `shasum app/src/core/log.ts` до й
+  після: `870c88646ac4c70f004095b08d9898dfba08eb75` (як і в спробі 2); `git status` у клоні — лише перейменовані
+  правила. 3 ходи, $0.22.
 - Обмеження: копію репозиторію без `.git` (просто скопійовані файли) хук не розпізнає — для неї діє лише правило `do-not-touch`; git worktree і клон з `.git` захищені.
 - Обмеження: хук ловить лише `Edit` і `Write`. `Bash` (`sed -i`, `>`) і `NotebookEdit` він не закриває; від цього лишається перевірка `check:rules` (`core-untouched`). По одному прогону на кожну спробу.
