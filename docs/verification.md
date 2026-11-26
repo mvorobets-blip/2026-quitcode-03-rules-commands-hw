@@ -135,13 +135,14 @@
     `postJson`, `parseJson` + guard `isTelegramResponse`, `log`; токен у URL, тому
     текст помилки проходить через `redact()`; `name: "telegram-notify"`,
     `requiredEnv: ["TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]`.
-  - `app/src/integrations/telegram-notify.test.ts` — 9 тестів (на момент прогону — 8; дев'ятий додано за рев'ю CodeRabbit): успіх (точні URL і тіло,
+  - `app/src/integrations/telegram-notify.test.ts` — на момент прогону 8 тестів; на коміті `eef038d` (останні зміни коду) — 10:
+    дев'ятий (неочікувана форма відповіді) і десятий (обрізання довгого імені, 4096) додано за рев'ю CodeRabbit; успіх (точні URL і тіло,
     немає email / phone), відсутня кожна з двох змінних, HTTP 400 (без повтору, без
     токена в помилці), `ok: false`, невалідний JSON, `name`/`requiredEnv`, формат.
   - `app/src/integrations/index.ts` — імпорт + `telegramNotify` у масиві (2 рядки через
     named-експорт; агент сам це зазначив).
 - `grep -nE "fetch|process\.env|JSON\.parse|console\.|any"` по новому модулю → порожньо.
-- `npm test`: 18 → 26 passed (7 файлів) на момент прогону; на фінальному коді гілки — 27 passed (7 файлів), перевірено повторно 23.11.2026. `npm run typecheck` — без помилок.
+- `npm test`: 18 → 26 passed (7 файлів) на момент прогону; на коміті `eef038d` (останні зміни коду в гілці) — 31 passed (7 файлів), перевірено повторно 26.11.2026 (`npm --prefix app test`). `npm run typecheck` — без помилок.
 - `npm run check:rules`: `TOTAL: 1` (не зріс; лише спадкове `src/sync/state.ts`),
   для нових файлів 0, `core-untouched` 0. Core не змінено, залежностей не додано,
   не комітив — показав підсумок.

@@ -47,8 +47,8 @@ paths:
 
 ## Як перевірити
 
-- `grep -rnE "from ['\"]\.\./(integrations|sync)/" app/src/core` → порожньо (обидва види лапок).
+- `grep -rnE "from[[:space:]]+['\"]\.\./(integrations|sync)/" app/src/core` → порожньо (обидва види лапок, будь-які пробіли й табуляція після `from`).
 - `grep -rn "\.\./sync/" app/src/integrations` → порожньо.
-- `grep -rnE "from ['\"]\.\./integrations/[a-z0-9-]+\.js['\"]" app/src/sync` → лише `index.js` або порожньо.
+- `grep -rnE "from[[:space:]]+['\"]\.\./integrations/[a-z0-9-]+\.js['\"]" app/src/sync` → лише `index.js` або порожньо.
 - Діф нової інтеграції — рівно три файли: `<name>.ts`, `<name>.test.ts`, `index.ts`.
 - `cd app && npm run typecheck` — без помилок (немає звернень до неіснуючого API ядра).
